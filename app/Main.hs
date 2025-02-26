@@ -37,7 +37,8 @@ exitWithError msg = hPutStrLn stderr msg >> exitWith (ExitFailure 84)
 
 getConfig :: [String] -> Config -> IO Config
 getConfig [] config =
-    if rule config == -1 then exitWithError "--rule is required" else return config
+    if rule config == -1 then exitWithError "--rule is required"
+    else return config
 getConfig ("--rule"  : r : xs) config =
     case readMaybe r of
         Just val -> getConfig xs config { rule = val }

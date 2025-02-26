@@ -1,3 +1,9 @@
+{-
+-- EPITECH PROJECT, 2025
+-- $WOLFRAM
+-- File description:
+-- $WOLFRAM
+-}
 module Rules where
 
 rule30:: Bool -> Bool -> Bool -> Bool
