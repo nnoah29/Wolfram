@@ -65,9 +65,18 @@ getConfig (_ : _) _ = exitWithError "Invalid argument"
 initRows:: Int -> [Bool]
 initRows a = [if i == (a `div` 2) then True else False | i <- [0..a-1]]
   
-displayRow :: [Bool] -> IO ()
-displayRow row = putStrLn [if cell == True then '*' else ' ' |
-    cell <- drop 500 (take (length row - 500) row)]
+displayRow :: Config -> [Bool] -> IO ()
+displayRow conf row =
+    let x = 500
+        y = length row - 500
+        spaces = replicate (max 0 (move conf)) ' '
+        display =
+            if move conf >= 0
+            then [if cell then '*' else ' ' | cell <- drop x (take y row)]
+            else [if cell then '*' else ' ' | cell <- drop (x - move conf) (take (y) row)]
+    in putStrLn (spaces ++ display)
+
+
 
 nextGen :: [Bool] -> Config -> [Bool]
 nextGen row conf =
@@ -84,18 +93,18 @@ generate prev currentGen conf
         Just 0 -> return ()
         Just n ->
             let row = nextGen prev conf
-            in displayRow row >>
+            in displayRow conf row >>
             generate row (currentGen + 1) conf {nbLines = Just (n - 1)}
         Nothing ->
             let row = nextGen prev conf
-            in displayRow row >>
+            in displayRow conf row >>
             generate row (currentGen + 1) conf
   
 wolfram :: Config -> IO ()
 wolfram conf =
     let row = initRows (window conf + 1000)
         n = fromMaybe 1 (nbLines conf)
-    in if  (start conf == 0 && nbLines conf /= Nothing) then displayRow row >>
+    in if  (start conf == 0 && nbLines conf /= Nothing) then displayRow conf row >>
         generate row 1 conf {nbLines = Just (n - 1)}
     else generate row 1 conf
 
