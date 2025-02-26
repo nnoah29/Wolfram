@@ -67,13 +67,7 @@ initRows a = [if i == (a `div` 2) then True else False | i <- [0..a-1]]
   
 displayRow :: [Bool] -> IO ()
 displayRow row = putStrLn [if cell == True then '*' else ' ' |
- cell <- drop 500 (take (length row - 500) row)]
-
-applyRule :: Int -> Bool -> Bool -> Bool -> Bool
-applyRule  30 l c r = rule30  l c r
-applyRule  90 l c r = rule90  l c r
-applyRule 110 l c r = rule110 l c r
-applyRule _ _ _ _ = False
+    cell <- drop 500 (take (length row - 500) row)]
 
 nextGen :: [Bool] -> Config -> [Bool]
 nextGen row conf =
@@ -101,10 +95,11 @@ wolfram :: Config -> IO ()
 wolfram conf =
     let row = initRows (window conf + 1000)
         n = fromMaybe 1 (nbLines conf)
-    in if  (start conf == 0) then displayRow row >>
+    in if  (start conf == 0 && nbLines conf /= Nothing) then displayRow row >>
         generate row 1 conf {nbLines = Just (n - 1)}
     else generate row 1 conf
 
+-------------------------------------------------
 
 main :: IO ()
 main = do
@@ -112,4 +107,4 @@ main = do
     conf <- getConfig args defaultConfig
     wolfram conf
 
-----------------------------------------
+-------------------------------------------------

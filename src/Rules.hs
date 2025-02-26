@@ -6,6 +6,12 @@
 -}
 module Rules where
 
+applyRule :: Int -> Bool -> Bool -> Bool -> Bool
+applyRule  30 l c r = rule30  l c r
+applyRule  90 l c r = rule90  l c r
+applyRule 110 l c r = rule110 l c r
+applyRule _ _ _ _ = False
+
 rule30:: Bool -> Bool -> Bool -> Bool
 rule30 True  True  True  = False -- 111 = 0
 rule30 True  True  False = False -- 110 = 0
