@@ -7,9 +7,12 @@
 
 module Main (main) where
 import Lib ()
+import Rules
 import System.Environment (getArgs)
 import Data.Maybe (fromMaybe)
 import Text.Read (readMaybe)
+import System.Exit (exitWith, ExitCode(ExitFailure))
+import System.IO (hPutStrLn, stderr)
 
 
 data Config = Config {
@@ -22,26 +25,40 @@ data Config = Config {
 
 defaultConfig :: Config
 defaultConfig = Config {
-    rule = error "--rule is required",
+    rule = -1,
     start = 0,
     nbLines = Nothing,
     window = 80,
     move = 0
 }
 
-getConfig :: [String] -> Config -> Config
-getConfig [] config = config
+exitWithError :: String -> IO a
+exitWithError msg = hPutStrLn stderr msg >> exitWith (ExitFailure 84)
+
+getConfig :: [String] -> Config -> IO Config
+getConfig [] config =
+    if rule config == -1 then exitWithError "--rule is required" else return config
 getConfig ("--rule"  : r : xs) config =
-    getConfig xs config {rule = read r }
+    case readMaybe r of
+        Just val -> getConfig xs config { rule = val }
+        Nothing  -> exitWithError "Invalid value for --rule"
 getConfig ("--start" : s : xs) config =
-    getConfig xs config {start = fromMaybe 0 (readMaybe s)}
+    case readMaybe s of
+        Just val | val >= 0 -> getConfig xs config { start = val }
+        _ -> exitWithError "Invalid value for --start (must be >= 0)"
 getConfig ("--lines" : l : xs) config =
-    getConfig xs config {nbLines = readMaybe l }
+    case readMaybe l of
+        Just val | val > 0 -> getConfig xs config { nbLines = Just val }
+        _ -> exitWithError "Invalid value for --lines (must be > 0)"
 getConfig ("--window": w : xs) config =
-    getConfig xs config {window = fromMaybe 80 (readMaybe w)}
+    case readMaybe w of
+        Just val | val > 0 -> getConfig xs config { window = val }
+        _ -> exitWithError "Invalid value for --window (must be > 0)"
 getConfig ("--move"  : m : xs) config =
-    getConfig xs config {move = fromMaybe 0 (readMaybe m)}
-getConfig (_ : xs) config = getConfig xs config
+    case readMaybe m of
+        Just val -> getConfig xs config { move = val }
+        Nothing  -> exitWithError "Invalid value for --move"
+getConfig (_ : _) _ = exitWithError "Invalid argument"
 
 
 initRows:: Int -> [Bool]
@@ -87,41 +104,11 @@ wolfram conf =
         generate row 1 conf {nbLines = Just (n - 1)}
     else generate row 1 conf
 
-rule30:: Bool -> Bool -> Bool -> Bool
-rule30 True  True  True  = False -- 111 = 0
-rule30 True  True  False = False -- 110 = 0
-rule30 True  False True  = False -- 101 = 0
-rule30 True  False False = True  -- 100 = 1
-rule30 False True  True  = True  -- 011 = 1
-rule30 False True  False = True  -- 010 = 1
-rule30 False False True  = True  -- 001 = 1
-rule30 False False False = False -- 000 = 0
-
-
-rule90:: Bool -> Bool -> Bool -> Bool
-rule90 True  True  True  = False -- 111 = 0
-rule90 True  True  False = True  -- 110 = 1
-rule90 True  False True  = False -- 101 = 0
-rule90 True  False False = True  -- 100 = 1
-rule90 False True  True  = True  -- 011 = 1
-rule90 False True  False = False -- 010 = 0
-rule90 False False True  = True  -- 001 = 1
-rule90 False False False = False -- 000 = 0
-
-
-rule110:: Bool -> Bool -> Bool -> Bool
-rule110 True  True  True  = False -- 111 = 0
-rule110 True  True  False = True  -- 110 = 1
-rule110 True  False True  = True  -- 101 = 1
-rule110 True  False False = False -- 100 = 0
-rule110 False True  True  = True  -- 011 = 1
-rule110 False True  False = True  -- 010 = 1
-rule110 False False True  = True  -- 001 = 1
-rule110 False False False = False -- 000 = 0
 
 main :: IO ()
 main = do
     args <- getArgs
-    let conf = getConfig args defaultConfig in wolfram conf
+    conf <- getConfig args defaultConfig
+    wolfram conf
 
 ----------------------------------------
