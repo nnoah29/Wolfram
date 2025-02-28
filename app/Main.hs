@@ -67,8 +67,8 @@ initRows a = [if i == (a `div` 2) then True else False | i <- [0..a-1]]
   
 displayRow :: Config -> [Bool] -> IO ()
 displayRow conf row =
-    let x = 500
-        y = length row - 500
+    let x =  ((length row) - window conf) `div` 2
+        y = length row - x
         spaces = replicate (max 0 (move conf)) ' '
         display =
             if move conf >= 0
@@ -88,25 +88,30 @@ nextGen row conf =
 generate :: [Bool] -> Int -> Config -> IO ()
 generate prev currentGen conf
     | currentGen < (start conf) =
-        generate (nextGen prev conf) (currentGen + 1) conf
+        generate (nextGen ([False, False] ++ prev ++ [False, False]) conf) (currentGen + 1) conf
     | otherwise = case nbLines conf of
         Just 0 -> return ()
         Just n ->
-            let row = nextGen prev conf
+            let row = nextGen ([False, False] ++ prev ++ [False, False]) conf
             in displayRow conf row >>
             generate row (currentGen + 1) conf {nbLines = Just (n - 1)}
         Nothing ->
-            let row = nextGen prev conf
+            let row = nextGen ([False, False] ++ prev ++[False, False]) conf
             in displayRow conf row >>
             generate row (currentGen + 1) conf
+            
+wolfram2 :: Config -> [Bool] -> IO ()
+wolfram2 conf row = if ((start conf == 0 && nbLines conf == Nothing) ) then displayRow conf row >>
+        generate row 1 conf
+    else generate row 1 conf
   
 wolfram :: Config -> IO ()
 wolfram conf =
-    let row = initRows (window conf + 1000)
+    let row = initRows (window conf)
         n = fromMaybe 1 (nbLines conf)
-    in if  (start conf == 0 && nbLines conf /= Nothing) then displayRow conf row >>
+    in if  ((start conf == 0 && nbLines conf /= Nothing) ) then displayRow conf row >>
         generate row 1 conf {nbLines = Just (n - 1)}
-    else generate row 1 conf
+    else wolfram2 conf row
 
 -------------------------------------------------
 
@@ -121,8 +126,8 @@ main :: IO ()
 main = do
     args <- getArgs
     conf <- getConfig args defaultConfig
-    if ruleSupported (rule conf) then wolfram conf
+    if (ruleSupported (rule conf)) then wolfram conf
     else exitWithError "Rule is not supported"
     
-
 -------------------------------------------------
+--- ((length row) - window conf) `div` 2
