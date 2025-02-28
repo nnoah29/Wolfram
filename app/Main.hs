@@ -110,10 +110,19 @@ wolfram conf =
 
 -------------------------------------------------
 
+ruleSupported:: Int -> Bool
+ruleSupported 30 = True
+ruleSupported 90 = True
+ruleSupported 110 = True
+ruleSupported _ = False
+
+
 main :: IO ()
 main = do
     args <- getArgs
     conf <- getConfig args defaultConfig
-    wolfram conf
+    if ruleSupported (rule conf) then wolfram conf
+    else exitWithError "Rule is not supported"
+    
 
 -------------------------------------------------
